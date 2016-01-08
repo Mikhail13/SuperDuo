@@ -31,7 +31,8 @@
                 android:value=".MainActivity" />
         </activity>
 
-
+        <activity android:name=".barcode.BarcodeScanActivity"
+            android:label="@string/scanner_name"/>
 
         <provider
             android:name=".data.BookProvider"

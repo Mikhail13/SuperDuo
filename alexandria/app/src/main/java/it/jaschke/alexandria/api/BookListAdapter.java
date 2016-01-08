@@ -41,8 +41,11 @@ public class BookListAdapter extends CursorAdapter {
 
         ViewHolder viewHolder = (ViewHolder) view.getTag();
 
+        // Extra error case: image url is not always available
         String imgUrl = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        new DownloadImage(viewHolder.bookCover).execute(imgUrl);
+        if (imgUrl != null && !imgUrl.isEmpty()) {
+            new DownloadImage(viewHolder.bookCover).execute(imgUrl);
+        }
 
         String bookTitle = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
         viewHolder.bookTitle.setText(bookTitle);

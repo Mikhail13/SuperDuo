@@ -24,6 +24,7 @@ import java.util.Vector;
 
 import barqsoft.footballscores.DatabaseContract;
 import barqsoft.footballscores.R;
+import barqsoft.footballscores.Utilities;
 
 /**
  * Created by yehya khaled on 3/2/2015.
@@ -134,20 +135,8 @@ public class myFetchService extends IntentService
     private void processJSONdata (String JSONdata,Context mContext, boolean isReal)
     {
         //JSON data
-        // This set of league codes is for the 2015/2016 season. In fall of 2016, they will need to
-        // be updated. Feel free to use the codes
-        final String BUNDESLIGA1 = "394";
-        final String BUNDESLIGA2 = "395";
-        final String LIGUE1 = "396";
-        final String LIGUE2 = "397";
-        final String PREMIER_LEAGUE = "398";
-        final String PRIMERA_DIVISION = "399";
-        final String SEGUNDA_DIVISION = "400";
-        final String SERIE_A = "401";
-        final String PRIMERA_LIGA = "402";
-        final String Bundesliga3 = "403";
-        final String EREDIVISIE = "404";
 
+        // Extra error case: see fixed league names/codes in Utilities calss
 
         final String SEASON_LINK = "http://api.football-data.org/alpha/soccerseasons/";
         final String MATCH_LINK = "http://api.football-data.org/alpha/fixtures/";
@@ -164,7 +153,7 @@ public class myFetchService extends IntentService
         final String MATCH_DAY = "matchday";
 
         //Match data
-        String League = null;
+        String league = null;
         String mDate = null;
         String mTime = null;
         String Home = null;
@@ -185,18 +174,14 @@ public class myFetchService extends IntentService
             {
 
                 JSONObject match_data = matches.getJSONObject(i);
-                League = match_data.getJSONObject(LINKS).getJSONObject(SOCCER_SEASON).
+                league = match_data.getJSONObject(LINKS).getJSONObject(SOCCER_SEASON).
                         getString("href");
-                League = League.replace(SEASON_LINK,"");
+                league = league.replace(SEASON_LINK,"");
                 //This if statement controls which leagues we're interested in the data from.
                 //add leagues here in order to have them be added to the DB.
                 // If you are finding no data in the app, check that this contains all the leagues.
                 // If it doesn't, that can cause an empty DB, bypassing the dummy data routine.
-                if(     League.equals(PREMIER_LEAGUE)      ||
-                        League.equals(SERIE_A)             ||
-                        League.equals(BUNDESLIGA1)         ||
-                        League.equals(BUNDESLIGA2)         ||
-                        League.equals(PRIMERA_DIVISION)     )
+                if(Utilities.isKnownLeague(league))
                 {
                     match_id = match_data.getJSONObject(LINKS).getJSONObject(SELF).
                             getString("href");
@@ -244,7 +229,7 @@ public class myFetchService extends IntentService
                     match_values.put(DatabaseContract.scores_table.AWAY_COL,Away);
                     match_values.put(DatabaseContract.scores_table.HOME_GOALS_COL,Home_goals);
                     match_values.put(DatabaseContract.scores_table.AWAY_GOALS_COL,Away_goals);
-                    match_values.put(DatabaseContract.scores_table.LEAGUE_COL,League);
+                    match_values.put(DatabaseContract.scores_table.LEAGUE_COL,league);
                     match_values.put(DatabaseContract.scores_table.MATCH_DAY,match_day);
                     //log spam
 
@@ -259,13 +244,16 @@ public class myFetchService extends IntentService
                     values.add(match_values);
                 }
             }
-            int inserted_data = 0;
-            ContentValues[] insert_data = new ContentValues[values.size()];
-            values.toArray(insert_data);
-            inserted_data = mContext.getContentResolver().bulkInsert(
-                    DatabaseContract.BASE_CONTENT_URI,insert_data);
+            // Extra error case: only call bulkInsert if there is data
+            if (values.size() > 0) {
+                int inserted_data = 0;
+                ContentValues[] insert_data = new ContentValues[values.size()];
+                values.toArray(insert_data);
+                inserted_data = mContext.getContentResolver().bulkInsert(
+                        DatabaseContract.BASE_CONTENT_URI,insert_data);
 
-            //Log.v(LOG_TAG,"Succesfully Inserted : " + String.valueOf(inserted_data));
+                //Log.v(LOG_TAG,"Succesfully Inserted : " + String.valueOf(inserted_data));
+            }
         }
         catch (JSONException e)
         {

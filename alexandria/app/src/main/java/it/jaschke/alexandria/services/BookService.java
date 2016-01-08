@@ -94,6 +94,7 @@ public class BookService extends IntentService {
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
         String bookJsonString = null;
+        String errorMessage = null;
 
         try {
             final String FORECAST_BASE_URL = "https://www.googleapis.com/books/v1/volumes?";
@@ -128,8 +129,12 @@ public class BookService extends IntentService {
                 return;
             }
             bookJsonString = buffer.toString();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error ", e);
+            errorMessage = getResources().getString(R.string.io_exception);
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error ", e);
+            errorMessage = getResources().getString(R.string.exception);
         } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
@@ -144,60 +149,72 @@ public class BookService extends IntentService {
 
         }
 
-        final String ITEMS = "items";
-
-        final String VOLUME_INFO = "volumeInfo";
-
-        final String TITLE = "title";
-        final String SUBTITLE = "subtitle";
-        final String AUTHORS = "authors";
-        final String DESC = "description";
-        final String CATEGORIES = "categories";
-        final String IMG_URL_PATH = "imageLinks";
-        final String IMG_URL = "thumbnail";
-
-        try {
-            JSONObject bookJson = new JSONObject(bookJsonString);
-            JSONArray bookArray;
-            if(bookJson.has(ITEMS)){
-                bookArray = bookJson.getJSONArray(ITEMS);
-            }else{
-                Intent messageIntent = new Intent(MainActivity.MESSAGE_EVENT);
-                messageIntent.putExtra(MainActivity.MESSAGE_KEY,getResources().getString(R.string.not_found));
-                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(messageIntent);
-                return;
+        // Error case:
+        // The following if statement prevents NullPointerException (crash) when offline
+        if (bookJsonString == null || bookJsonString.isEmpty()) {
+            Intent messageIntent = new Intent(MainActivity.MESSAGE_EVENT);
+            if (errorMessage == null) {
+                errorMessage = getResources().getString(R.string.exception);
             }
+            messageIntent.putExtra(MainActivity.MESSAGE_KEY, errorMessage);
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(messageIntent);
+            return;
+        } else {
+            final String ITEMS = "items";
 
-            JSONObject bookInfo = ((JSONObject) bookArray.get(0)).getJSONObject(VOLUME_INFO);
+            final String VOLUME_INFO = "volumeInfo";
 
-            String title = bookInfo.getString(TITLE);
+            final String TITLE = "title";
+            final String SUBTITLE = "subtitle";
+            final String AUTHORS = "authors";
+            final String DESC = "description";
+            final String CATEGORIES = "categories";
+            final String IMG_URL_PATH = "imageLinks";
+            final String IMG_URL = "thumbnail";
 
-            String subtitle = "";
-            if(bookInfo.has(SUBTITLE)) {
-                subtitle = bookInfo.getString(SUBTITLE);
+            try {
+                JSONObject bookJson = new JSONObject(bookJsonString);
+                JSONArray bookArray;
+                if (bookJson.has(ITEMS)) {
+                    bookArray = bookJson.getJSONArray(ITEMS);
+                } else {
+                    Intent messageIntent = new Intent(MainActivity.MESSAGE_EVENT);
+                    messageIntent.putExtra(MainActivity.MESSAGE_KEY, getResources().getString(R.string.not_found));
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(messageIntent);
+                    return;
+                }
+
+                JSONObject bookInfo = ((JSONObject) bookArray.get(0)).getJSONObject(VOLUME_INFO);
+
+                String title = bookInfo.getString(TITLE);
+
+                String subtitle = "";
+                if (bookInfo.has(SUBTITLE)) {
+                    subtitle = bookInfo.getString(SUBTITLE);
+                }
+
+                String desc = "";
+                if (bookInfo.has(DESC)) {
+                    desc = bookInfo.getString(DESC);
+                }
+
+                String imgUrl = "";
+                if (bookInfo.has(IMG_URL_PATH) && bookInfo.getJSONObject(IMG_URL_PATH).has(IMG_URL)) {
+                    imgUrl = bookInfo.getJSONObject(IMG_URL_PATH).getString(IMG_URL);
+                }
+
+                writeBackBook(ean, title, subtitle, desc, imgUrl);
+
+                if (bookInfo.has(AUTHORS)) {
+                    writeBackAuthors(ean, bookInfo.getJSONArray(AUTHORS));
+                }
+                if (bookInfo.has(CATEGORIES)) {
+                    writeBackCategories(ean, bookInfo.getJSONArray(CATEGORIES));
+                }
+
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, "Error ", e);
             }
-
-            String desc="";
-            if(bookInfo.has(DESC)){
-                desc = bookInfo.getString(DESC);
-            }
-
-            String imgUrl = "";
-            if(bookInfo.has(IMG_URL_PATH) && bookInfo.getJSONObject(IMG_URL_PATH).has(IMG_URL)) {
-                imgUrl = bookInfo.getJSONObject(IMG_URL_PATH).getString(IMG_URL);
-            }
-
-            writeBackBook(ean, title, subtitle, desc, imgUrl);
-
-            if(bookInfo.has(AUTHORS)) {
-                writeBackAuthors(ean, bookInfo.getJSONArray(AUTHORS));
-            }
-            if(bookInfo.has(CATEGORIES)){
-                writeBackCategories(ean,bookInfo.getJSONArray(CATEGORIES) );
-            }
-
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error ", e);
         }
     }
 

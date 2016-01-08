@@ -2,15 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="barqsoft.footballscores" >
 
-    <uses-permission
-        android:name="android.permission.INTERNET"
-        android:maxSdkVersion="22" />
+    <!-- Removed maxSdkVersion as it wil be required with any API level not just 22 and lower -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        android:supportsRtl="true">
+
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
@@ -23,7 +24,8 @@
 
         <provider
             android:name=".ScoresProvider"
-            android:authorities="barqsoft.footballscores" />
+            android:authorities="barqsoft.footballscores"
+            android:exported="true"/>
 
         <activity
             android:name=".AboutActivity"
@@ -33,7 +35,21 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="barqsoft.footballscores.MainActivity" />
         </activity>
+
         <service android:name=".service.myFetchService" />
+
+        <receiver android:name=".widget.ScoresAppWidgetProvider" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/scores_appwidget_info" />
+        </receiver>
+
+        <service android:name=".widget.ScoresWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
     </application>
 
 </manifest>

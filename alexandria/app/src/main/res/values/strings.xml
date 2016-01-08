@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Alexandria</string>
+    <string name="scanner_name">Barcode Scanner</string>
 
     <!-- Menu Items -->
     <string name="books">List of Books</string>
@@ -25,7 +26,14 @@
     <string name="back_button">go back</string>
     <string name="share_text">A must read book: </string>
 
-<!-- TODO: Remove or change this placeholder text -->
+    <string name="permission_camera_rationale">Access to the camera is needed for barcode scanning</string>
+    <string name="request_permission_ok">OK</string>
+    <string name="low_storage_error">Barcode scanner dependencies cannot be downloaded due to low device storage</string>
+    <string name="io_exception">Unable to read Book info from the server</string>
+    <string name="exception">Error retrieving Book info</string>
+
+
+    <!-- TODO: Remove or change this placeholder text -->
     <string name="about_text">This application gets book information from a Google API. All titles, cover images, and author information come from there.
     The original version of this app was built by Sascha Jaschke, and a modified version is given to students in the Udacity Android Nanodegree program. </string>
 </resources>

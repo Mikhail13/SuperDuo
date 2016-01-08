@@ -10,6 +10,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,9 +18,12 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.android.gms.common.api.CommonStatusCodes;
 
+import java.text.BreakIterator;
+
+import it.jaschke.alexandria.barcode.BarcodeScanActivity;
 import it.jaschke.alexandria.data.AlexandriaContract;
 import it.jaschke.alexandria.services.BookService;
 import it.jaschke.alexandria.services.DownloadImage;
@@ -33,10 +37,10 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     private final String EAN_CONTENT="eanContent";
     private static final String SCAN_FORMAT = "scanFormat";
     private static final String SCAN_CONTENTS = "scanContents";
+    private static final int RC_BARCODE_SCAN = 9001;
 
     private String mScanFormat = "Format:";
     private String mScanContents = "Contents:";
-
 
 
     public AddBook(){
@@ -97,12 +101,9 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 // are using an external app.
                 //when you're done, remove the toast below.
                 Context context = getActivity();
-                CharSequence text = "This button should let you scan a book for its barcode!";
-                int duration = Toast.LENGTH_SHORT;
 
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.show();
-
+                Intent intent = new Intent(context, BarcodeScanActivity.class);
+                startActivityForResult(intent, RC_BARCODE_SCAN);
             }
         });
 
@@ -130,6 +131,17 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         }
 
         return rootView;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == RC_BARCODE_SCAN && resultCode == CommonStatusCodes.SUCCESS && data != null) {
+            String barcode = data.getStringExtra(BarcodeScanActivity.BarcodeString);
+            Log.d(TAG, "Barcode read: " + barcode);
+            ean.setText(barcode);
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     private void restartLoader(){
